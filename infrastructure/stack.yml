@@ -10,4 +10,4 @@ Resources:
 Outputs:
   ECRRepository:
     Description: The ECR repository URI
-    Value: !Ref ServerRepository
+    Value: !GetAtt [ServerRepository, RepositoryUri]

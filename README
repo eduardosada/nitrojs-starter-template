@@ -17,6 +17,7 @@ Create a new IAM user for github actions and get the access keys.
         {
             "Effect": "Allow",
             "Action": [
+                "ecr:CreateRepository",
                 "ecr:GetDownloadUrlForLayer",
                 "ecr:BatchGetImage",
                 "ecr:CompleteLayerUpload",
