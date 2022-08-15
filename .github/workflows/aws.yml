@@ -18,6 +18,7 @@ jobs:
     environment: production
 
     outputs:
+      HELLO: "Hello"
       ECR_REPOSITORY: ${{ steps.infra-stack.outputs.ECRRepository }}
 
     steps:
@@ -30,6 +31,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          mask-aws-account-id: "no"
 
       - name: Deploy stack with CloudFormation
         id: infra-stack
