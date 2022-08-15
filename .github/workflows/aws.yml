@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
 
+    outputs:
+      ECR_REPOSITORY: ${{ steps.infra-stack.outputs.ECRRepository }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -43,7 +46,7 @@ jobs:
     needs: deploy_infra
 
     env:
-      ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECRRepository}}
+      ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECR_REPOSITORY}}
 
     steps:
       - name: debug
