@@ -43,14 +43,9 @@ jobs:
     needs: deploy_infra
 
     env:
-      ECR_REPOSITORY: pruebita
+      ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECRRepository}}
 
     steps:
-      - name: debug
-        run: >-
-          echo ${{needs.deploy_infra.outputs.ECR_REPOSITORY}}
-          echo ${{needs.deploy_infra.outputs}}
-
       - name: Checkout
         uses: actions/checkout@v3
 

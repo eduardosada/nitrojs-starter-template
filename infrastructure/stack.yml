@@ -8,6 +8,6 @@ Resources:
       ImageTagMutability: IMMUTABLE
 
 Outputs:
-  ECR_REPOSITORY:
-    Description: The ECR repository ARN
+  ECRRepository:
+    Description: The ECR repository URI
     Value: !Ref ServerRepository
