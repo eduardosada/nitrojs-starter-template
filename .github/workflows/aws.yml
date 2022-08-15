@@ -35,9 +35,6 @@ jobs:
           name: server-infra
           template: infrastructure/stack.yml
           no-fail-on-empty-changeset: "1"
-          parameter-overrides: >-
-            EnvironmentName=production
-            VpcCIDR=10.192.0.0/16
 
   deploy_code:
     name: Deploy Code
