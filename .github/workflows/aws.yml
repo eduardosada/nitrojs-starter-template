@@ -1,0 +1,84 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [$default-branch]
+
+env:
+  AWS_REGION: eu-central-1
+
+permissions:
+  contents: read
+
+jobs:
+  deploy_infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Deploy stack with CloudFormation
+        id: infra-stack
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: server-infra
+          template: infrastructure/stack.yaml
+          no-fail-on-empty-changeset: "1"
+          parameter-overrides: >-
+            EnvironmentName=production
+            VpcCIDR=10.192.0.0/16
+
+  deploy_code:
+    name: Deploy Code
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy_infra
+
+    env:
+      ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECR_REPOSITORY}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and push it to ECR.
+          docker build . --file image-lambda.Dockerfile --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Deploy lambda function with CloudFormation
+        id: lambda-stack
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: server-lambda
+          template: infrastructure/lambda.yaml
+          no-fail-on-empty-changeset: "1"
+          parameter-overrides: >-
+            LambdaImageURI=${{ steps.build-image.outputs.image }}

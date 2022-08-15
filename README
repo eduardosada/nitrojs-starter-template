@@ -1,0 +1,68 @@
+# Nitro.js Starter Template
+
+## Clone and install
+
+Clone this repository and run `npm i` to install dependencies.
+
+Create a new IAM user for github actions and get the access keys.
+1. Go to IAM a create a new user called "github-actions"
+2. Enable "Access key - Programmatic access"
+3. On Permissions select "Attach existing policies directly"
+3. Create a new Policy called "ImageBuilderForGitHub"
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:CompleteLayerUpload",
+                "ecr:GetAuthorizationToken",
+                "ecr:UploadLayerPart",
+                "ecr:InitiateLayerUpload",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:PutImage",
+                "ecs:RegisterTaskDefinition"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "kms:Decrypt",
+            "Resource": "*",
+            "Condition": {
+                "ForAnyValue:StringEquals": {
+                    "aws:CalledVia": "imagebuilder.amazonaws.com",
+                    "kms:EncryptionContextKeys": "aws:imagebuilder:arn"
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:CreateLogGroup",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:*:*:log-group:/aws/imagebuilder/*"
+        }
+    ]
+}
+```
+
+4. Copy the Access key id and the secret access key.
+5. Create a new file called ".env" and paste the two keys.
+
+```
+AWS_ACCESS_KEY_ID={{}}
+AWS_SECRET_ACCESS_KEY={{}}
+```
+
+Before commiting any changes in this repository configure github actions:
+
+1. Go to Repository Settings / Secrets / Actions and click on "New repository secret".
+2. Add a new secret called "AWS_ACCESS_KEY_ID" with your AWS access key id.
+3. Add a new secret called "AWS_SECRET_ACCESS_KEY" with your AWS secret access key.

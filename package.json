@@ -1,0 +1,40 @@
+{
+  "name": "nitrojs-starter-template",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r dotenv/config .output/server/index.mjs",
+    "start:dev": "nitropack dev",
+    "build": "nitropack build",
+    "docker:node:build": "docker build . -f image-node.Dockerfile -t server",
+    "docker:lambda:build": "docker build . -f image-lambda.Dockerfile -t server",
+    "docker:run": "docker run -dp 9000:8080 server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eduardosada/nitrojs-starter-template.git"
+  },
+  "keywords": [
+    "nitro",
+    "node",
+    "typescript",
+    "nitrojs",
+    "aws",
+    "ecr",
+    "lambda"
+  ],
+  "author": "Eduardo Sada",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/eduardosada/nitrojs-starter-template/issues"
+  },
+  "homepage": "https://github.com/eduardosada/nitrojs-starter-template#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "helmet": "^5.1.0",
+    "morgan": "^1.10.0",
+    "nitropack": "^0.4.9"
+  }
+}
