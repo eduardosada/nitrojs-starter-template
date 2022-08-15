@@ -8,8 +8,14 @@ Resources:
       ImageTagMutability: IMMUTABLE
 
 Outputs:
-  ECRRepository:
+  ECRRepositoryUri:
     Description: The ECR repository URI
     Value: !GetAtt [ServerRepository, RepositoryUri]
     Export:
-      Name: !Sub "${AWS::StackName}-ECRRepository"
+      Name: !Sub "${AWS::StackName}-ECRRepositoryUri"
+
+  ECRRepositoryName:
+    Description: The ECR repository name
+    Value: !Ref ServerRepository
+    Export:
+      Name: !Sub "${AWS::StackName}-ECRRepositoryName"

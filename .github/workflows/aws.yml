@@ -18,8 +18,7 @@ jobs:
     environment: production
 
     outputs:
-      HELLO: "Hello"
-      ECR_REPOSITORY: ${{ steps.infra-stack.outputs.ECRRepository }}
+      ECR_REPOSITORY: ${{ steps.infra-stack.outputs.ECRRepositoryName }}
 
     steps:
       - name: Checkout
@@ -51,11 +50,6 @@ jobs:
       ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECR_REPOSITORY}}
 
     steps:
-      - name: debug
-        shell: bash
-        run: |
-          echo "outputs: ${{toJson(needs.deploy_infra.outputs)}}"
-
       - name: Checkout
         uses: actions/checkout@v3
 
