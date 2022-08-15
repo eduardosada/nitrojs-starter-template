@@ -46,6 +46,12 @@ jobs:
       ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECRRepository}}
 
     steps:
+      - name: debug
+        run: >-
+          echo "outputs.server-infra-ECRRepository: ${{needs.deploy_infra.outputs.server-infra-ECRRepository}}
+          echo "outputs.ECRRepository: ${{needs.deploy_infra.outputs.ECRRepository}}
+          echo "outputs: ${{needs.deploy_infra.outputs}}
+
       - name: Checkout
         uses: actions/checkout@v3
 
