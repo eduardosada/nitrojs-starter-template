@@ -49,9 +49,7 @@ jobs:
       - name: debug
         shell: bash
         run: |
-          echo "outputs.server-infra-ECRRepository: ${{needs.deploy_infra.outputs.server-infra-ECRRepository}}"
-          echo "outputs.ECRRepository: ${{needs.deploy_infra.outputs.ECRRepository}}"
-          echo "outputs: ${{needs.deploy_infra.outputs}}"
+          echo "outputs: ${{toJson(needs.deploy_infra.outputs)}}"
 
       - name: Checkout
         uses: actions/checkout@v3
