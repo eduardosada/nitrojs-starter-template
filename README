@@ -31,6 +31,13 @@ Create a new IAM user for github actions and get the access keys.
         },
         {
             "Effect": "Allow",
+            "Action": [
+                "cloudformation:*"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
             "Action": "kms:Decrypt",
             "Resource": "*",
             "Condition": {
