@@ -36,13 +36,13 @@ jobs:
             aws cloudformation describe-stacks \
               --region ${{ env.AWS_REGION }} \
               --stack-name ${{ env.AWS_STACK_NAME }} \
-              --query 'Stacks[0].Outputs' \
+              --query 'Stacks[0].Outputs[*].[OutputKey,OutputValue]' \
               --no-paginate \
               --output text
           )
 
           for line in $STACK_OUTPUT; do
-            read -r description exportKey key value <<< $line
+            read -r key value <<< $line
             echo "::set-output name=$key::$value"
           done
 
