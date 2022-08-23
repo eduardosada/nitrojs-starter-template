@@ -7,47 +7,16 @@ on:
 
 env:
   AWS_REGION: eu-central-1
+  AWS_STACK_NAME: patapon
 
 permissions:
   contents: read
 
 jobs:
-  deploy_infra:
-    name: Deploy Infrastructure
-    runs-on: ubuntu-latest
-    environment: production
-
-    outputs:
-      ECR_REPOSITORY: ${{ steps.infra-stack.outputs.ECRRepositoryName }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ${{ env.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          mask-aws-account-id: "no"
-
-      - name: Deploy stack with CloudFormation
-        id: infra-stack
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: server-infra
-          template: infrastructure/stack.yml
-          no-fail-on-empty-changeset: "1"
-
   deploy_code:
     name: Deploy Code
     runs-on: ubuntu-latest
     environment: production
-    needs: deploy_infra
-
-    env:
-      ECR_REPOSITORY: ${{needs.deploy_infra.outputs.ECR_REPOSITORY}}
 
     steps:
       - name: Checkout
@@ -59,7 +28,23 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          mask-aws-account-id: "no"
+
+      - name: Get resource arns
+        id: get-arns
+        run: |
+          STACK_OUTPUT=$(
+            aws cloudformation describe-stacks \
+              --region ${{ env.AWS_REGION }} \
+              --stack-name ${{ env.AWS_STACK_NAME }} \
+              --query 'Stacks[0].Outputs' \
+              --no-paginate \
+              --output text
+          )
+
+          for line in $STACK_OUTPUT; do
+            read -r description exportKey key value <<< $line
+            echo "::set-output name=$key::$value"
+          done
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -68,6 +53,7 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
+          ECR_REPOSITORY: ${{ steps.get-arns.outputs.ECR_REPOSITORY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
@@ -76,12 +62,49 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Deploy lambda function with CloudFormation
-        id: lambda-stack
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: server-lambda
-          template: infrastructure/lambda.yml
-          no-fail-on-empty-changeset: "1"
-          parameter-overrides: >-
-            LambdaImageURI=${{ steps.build-image.outputs.image }}
+      - name: Deploy Lambda function
+        id: lambda-function
+          ECR_REPOSITORY: ${{ steps.get-arns.outputs.ECR_REPOSITORY }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          LAMBDA_EXECUTION_ROLE: ${{ steps.get-arns.outputs.LAMBDA_EXECUTION_ROLE }}
+          IMAGE_TAG: ${{ github.sha }}
+          ENV_DOMAIN_NAME: nitrotemplate
+          ENV_SUPABASE_KEY: example
+          ENV_SUPABASE_URL: example
+
+        run: |
+          LAMBDA_OUTPUT=$(
+            aws lambda create-function \
+              --function-name $IMAGE_TAG \
+              --code ImageUri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+              --role $LAMBDA_EXECUTION_ROLE \
+              --package-type Image \
+              --environment Variables={DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL}
+              --publish
+          )
+          LAMBDA_ARN=$(node -pe 'JSON.parse(process.argv[1]).FunctionArn' $LAMBDA_OUTPUT)
+
+          aws lambda add-permission \
+            --function-name $LAMBDA_ARN \
+            --action lambda:InvokeFunction \
+            --principal elasticloadbalancing.amazonaws.com \
+            --statement-id $IMAGE_TAG
+
+          echo "::set-output name=LAMBDA_ARN::$LAMBDA_ARN"
+
+      - name: Register a target group
+        id: register-target-group
+        env:
+          TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TARGET_GROUP }}
+          LAMBDA_ARN: ${{ steps.lambda-function.outputs.LAMBDA_ARN }}
+        run: |
+          PREV_LAMBDA_ID=$(aws elbv2 describe-target-health --target-group-arn $TARGET_GROUP --query 'TargetHealthDescriptions[0].Target.Id')
+
+          aws elbv2 deregister-targets \
+          --target-group-arn $TARGET_GROUP \
+          --targets Id=$PREV_LAMBDA_ID
+
+          aws elbv2 register-targets \
+            --target-group-arn $TARGET_GROUP \
+            --targets Id=$LAMBDA_ARN
+
