@@ -53,7 +53,7 @@ jobs:
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
-          ECR_REPOSITORY: ${{ steps.get-arns.outputs.ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ steps.get-arns.outputs.RepositoryUri }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
@@ -65,9 +65,9 @@ jobs:
       - name: Deploy Lambda function
         id: lambda-function
         env:
-          ECR_REPOSITORY: ${{ steps.get-arns.outputs.ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ steps.get-arns.outputs.RepositoryUri }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          LAMBDA_EXECUTION_ROLE: ${{ steps.get-arns.outputs.LAMBDA_EXECUTION_ROLE }}
+          LAMBDA_EXECUTION_ROLE: ${{ steps.get-arns.outputs.LambdaExecutionRoleArn }}
           IMAGE_TAG: ${{ github.sha }}
           ENV_DOMAIN_NAME: nitrotemplate
           ENV_SUPABASE_KEY: example
@@ -96,7 +96,7 @@ jobs:
       - name: Register a target group
         id: register-target-group
         env:
-          TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TARGET_GROUP }}
+          TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TargetGroupArn }}
           LAMBDA_ARN: ${{ steps.lambda-function.outputs.LAMBDA_ARN }}
         run: |
           PREV_LAMBDA_ID=$(aws elbv2 describe-target-health --target-group-arn $TARGET_GROUP --query 'TargetHealthDescriptions[0].Target.Id')
