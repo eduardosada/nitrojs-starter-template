@@ -81,7 +81,7 @@ jobs:
               --code ImageUri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
               --role $LAMBDA_EXECUTION_ROLE \
               --package-type Image \
-              --environment Variables={DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL} \
+              --environment Variables="{DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL}" \
               --publish
           )
           LAMBDA_ARN=$(node -pe 'JSON.parse(process.argv[1]).FunctionArn' $LAMBDA_OUTPUT)
