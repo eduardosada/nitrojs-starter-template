@@ -64,6 +64,7 @@ jobs:
 
       - name: Deploy Lambda function
         id: lambda-function
+        env:
           ECR_REPOSITORY: ${{ steps.get-arns.outputs.ECR_REPOSITORY }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           LAMBDA_EXECUTION_ROLE: ${{ steps.get-arns.outputs.LAMBDA_EXECUTION_ROLE }}
@@ -107,4 +108,3 @@ jobs:
           aws elbv2 register-targets \
             --target-group-arn $TARGET_GROUP \
             --targets Id=$LAMBDA_ARN
-
