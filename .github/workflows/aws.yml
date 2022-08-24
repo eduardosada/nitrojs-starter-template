@@ -88,6 +88,8 @@ jobs:
               --publish
           )
 
+          aws lambda wait function-active-v2 --function-name $LAMBDA_ARN
+
           echo "::set-output name=LAMBDA_ARN::$LAMBDA_ARN"
           echo "LAMBDA_ARN=$LAMBDA_ARN" >> $GITHUB_ENV
 
