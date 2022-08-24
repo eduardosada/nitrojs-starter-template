@@ -108,9 +108,13 @@ jobs:
             --output text
           )
 
-          aws elbv2 deregister-targets \
-          --target-group-arn $TARGET_GROUP_ARN \
-          --targets Id=$PREV_LAMBDA_ID
+          echo $PREV_LAMBDA_ID
+
+          if [ "$PREV_LAMBDA_ID" != "None" ]; then
+            aws elbv2 deregister-targets \
+              --target-group-arn $TARGET_GROUP_ARN \
+              --targets Id=$PREV_LAMBDA_ID
+          fi
 
           aws elbv2 register-targets \
             --target-group-arn $TARGET_GROUP_ARN \
