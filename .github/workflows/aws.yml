@@ -75,29 +75,25 @@ jobs:
           ENV_SUPABASE_URL: example
 
         run: |
-          LAMBDA_OUTPUT=$(
+          LAMBDA_ARN=$(
             aws lambda create-function \
               --function-name $IMAGE_TAG \
               --code ImageUri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
               --role $LAMBDA_EXECUTION_ROLE \
               --package-type Image \
               --environment Variables="{DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL}" \
+              --output text \
+              --query 'FunctionArn' \
               --publish
           )
 
-          echo $LAMBDA_OUTPUT
-
-          LAMBDA_ARN=$(node -pe 'JSON.parse(process.argv[1]).FunctionArn' $LAMBDA_OUTPUT)
-
-          echo $LAMBDA_ARN
+          echo "::set-output name=LAMBDA_ARN::$LAMBDA_ARN"
 
           aws lambda add-permission \
             --function-name $LAMBDA_ARN \
             --action lambda:InvokeFunction \
             --principal elasticloadbalancing.amazonaws.com \
             --statement-id $IMAGE_TAG
-
-          echo "::set-output name=LAMBDA_ARN::$LAMBDA_ARN"
 
       - name: Register a target group
         id: register-target-group
