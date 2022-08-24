@@ -101,12 +101,17 @@ jobs:
           TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TargetGroupArn }}
           LAMBDA_ARN: ${{ steps.lambda-function.outputs.LAMBDA_ARN }}
         run: |
-          PREV_LAMBDA_ID=$(aws elbv2 describe-target-health --target-group-arn $TARGET_GROUP --query 'TargetHealthDescriptions[0].Target.Id')
+          PREV_LAMBDA_ID=$(
+            aws elbv2 describe-target-health \
+            --target-group-arn $TARGET_GROUP_ARN \
+            --query 'TargetHealthDescriptions[0].Target.Id' \
+            --output text
+          )
 
           aws elbv2 deregister-targets \
-          --target-group-arn $TARGET_GROUP \
+          --target-group-arn $TARGET_GROUP_ARN \
           --targets Id=$PREV_LAMBDA_ID
 
           aws elbv2 register-targets \
-            --target-group-arn $TARGET_GROUP \
+            --target-group-arn $TARGET_GROUP_ARN \
             --targets Id=$LAMBDA_ARN
