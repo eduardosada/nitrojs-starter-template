@@ -84,7 +84,12 @@ jobs:
               --environment Variables="{DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL}" \
               --publish
           )
+
+          echo $LAMBDA_OUTPUT
+
           LAMBDA_ARN=$(node -pe 'JSON.parse(process.argv[1]).FunctionArn' $LAMBDA_OUTPUT)
+
+          echo $LAMBDA_ARN
 
           aws lambda add-permission \
             --function-name $LAMBDA_ARN \
