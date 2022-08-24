@@ -62,6 +62,7 @@ jobs:
           docker build . --file image-lambda.Dockerfile --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Deploy Lambda function
         id: lambda-function
@@ -88,6 +89,7 @@ jobs:
           )
 
           echo "::set-output name=LAMBDA_ARN::$LAMBDA_ARN"
+          echo "LAMBDA_ARN=$LAMBDA_ARN" >> $GITHUB_ENV
 
           aws lambda add-permission \
             --function-name $LAMBDA_ARN \
@@ -99,7 +101,6 @@ jobs:
         id: register-target-group
         env:
           TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TargetGroupArn }}
-          LAMBDA_ARN: ${{ steps.lambda-function.outputs.LAMBDA_ARN }}
         run: |
           PREV_LAMBDA_ID=$(
             aws elbv2 describe-target-health \
@@ -108,7 +109,9 @@ jobs:
             --output text
           )
 
-          echo $PREV_LAMBDA_ID
+          echo "LAMBDA_ARN: $LAMBDA_ARN"
+          echo "PREV_LAMBDA_ID: $PREV_LAMBDA_ID"
+          echo "TARGET_GROUP_ARN: $TARGET_GROUP_ARN"
 
           if [ "$PREV_LAMBDA_ID" != "None" ]; then
             aws elbv2 deregister-targets \
