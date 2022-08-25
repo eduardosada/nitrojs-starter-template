@@ -52,15 +52,18 @@ Resources:
             Action:
               - "elasticloadbalancing:RegisterTargets"
               - "elasticloadbalancing:DeregisterTargets"
-              - "elasticloadbalancing:DescribeTargetHealth"
             Resource: !Ref TargetGroup
+
+          - Effect: Allow
+            Action:
+              - "elasticloadbalancing:DescribeTargetHealth"
+            Resource: "*"
 
           - Effect: Allow
             Action:
               - "ecr:DescribeRepositories"
               - "ecr:GetRepositoryPolicy"
               - "ecr:SetRepositoryPolicy"
-              - "ecr:LambdaECRImageRetrievalPolicy"
               - "ecr:PutImage"
               - "ecr:UploadLayerPart"
               - "ecr:InitiateLayerUpload"
