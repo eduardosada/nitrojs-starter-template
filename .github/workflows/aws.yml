@@ -56,21 +56,23 @@ jobs:
         env:
           ECR_REPOSITORY: ${{ steps.get-arns.outputs.RepositoryName }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Build a docker container and push it to ECR
-          docker build . --file image-lambda.Dockerfile --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+          IMAGE_TAG=${{ github.sha }}
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Deploy Lambda function
+          # Build a docker container and push it to ECR
+          docker build . --file image-lambda.Dockerfile --tag $IMAGE_URI
+          docker push $IMAGE_URI
+
+          # Output the new image URI
+          echo "::set-output name=image::$IMAGE_URI"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+      - name: Create and deploy a Lambda function
         id: lambda-function
         env:
-          ECR_REPOSITORY: ${{ steps.get-arns.outputs.RepositoryName }}
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           LAMBDA_EXECUTION_ROLE: ${{ steps.get-arns.outputs.LambdaExecutionRoleArn }}
-          IMAGE_TAG: ${{ github.sha }}
           ENV_DOMAIN_NAME: nitrotemplate
           ENV_SUPABASE_KEY: example
           ENV_SUPABASE_URL: example
@@ -79,7 +81,7 @@ jobs:
           LAMBDA_ARN=$(
             aws lambda create-function \
               --function-name $IMAGE_TAG \
-              --code ImageUri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+              --code ImageUri=$IMAGE_URI \
               --role $LAMBDA_EXECUTION_ROLE \
               --package-type Image \
               --environment Variables="{DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL}" \
@@ -99,8 +101,8 @@ jobs:
             --principal elasticloadbalancing.amazonaws.com \
             --statement-id $IMAGE_TAG
 
-      - name: Register a target group
-        id: register-target-group
+      - name: Deregister old Lambda function from Target Group
+        id: deregister-old-lambda-function
         env:
           TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TargetGroupArn }}
         run: |
@@ -111,16 +113,17 @@ jobs:
             --output text
           )
 
-          echo "LAMBDA_ARN: $LAMBDA_ARN"
-          echo "PREV_LAMBDA_ID: $PREV_LAMBDA_ID"
-          echo "TARGET_GROUP_ARN: $TARGET_GROUP_ARN"
-
           if [ "$PREV_LAMBDA_ID" != "None" ]; then
             aws elbv2 deregister-targets \
               --target-group-arn $TARGET_GROUP_ARN \
               --targets Id=$PREV_LAMBDA_ID
           fi
 
+      - name: Register the new Lambda function with the Target Group
+        id: register-lambda-function
+        env:
+          TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TargetGroupArn }}
+        run: |
           aws elbv2 register-targets \
             --target-group-arn $TARGET_GROUP_ARN \
             --targets Id=$LAMBDA_ARN

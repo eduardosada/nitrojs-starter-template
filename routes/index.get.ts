@@ -1,3 +1,3 @@
-export default defineHandler(() => {
-  return { statusText: '¡Hola mundo! ¡Functiona!' };
+export default eventHandler(() => {
+  return { statusText: 'Hello world!' };
 });

@@ -8,7 +8,7 @@ Create a new IAM user for github actions and get the access keys.
 1. Go to IAM a create a new user called "github-actions"
 2. Enable "Access key - Programmatic access"
 3. On Permissions select "Attach existing policies directly"
-3. Create a new Policy called "ImageBuilderForGitHub"
+4. Create a new Policy called "ImageBuilderForGitHub"
 
 ```json
 {
@@ -17,16 +17,24 @@ Create a new IAM user for github actions and get the access keys.
         {
             "Effect": "Allow",
             "Action": [
+                "cloudformation:DescribeStacks",
                 "ecr:CreateRepository",
-                "ecr:DescribeRepositories",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchGetImage",
-                "ecr:CompleteLayerUpload",
+                "ecr:DescribeRepositories"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowPushPull",
+            "Effect": "Allow",
+            "Action": [
                 "ecr:GetAuthorizationToken",
-                "ecr:UploadLayerPart",
-                "ecr:InitiateLayerUpload",
+                "ecr:BatchGetImage",
                 "ecr:BatchCheckLayerAvailability",
+                "ecr:CompleteLayerUpload",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:InitiateLayerUpload",
                 "ecr:PutImage",
+                "ecr:UploadLayerPart",
                 "ecs:RegisterTaskDefinition"
             ],
             "Resource": "*"
@@ -34,7 +42,22 @@ Create a new IAM user for github actions and get the access keys.
         {
             "Effect": "Allow",
             "Action": [
-                "cloudformation:*"
+                "ecs:RegisterTaskDefinition"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lambda:CreateFunction",
+                "lambda:AddPermission",
+                "lambda:GetFunction",
+                "ecr:GetRepositoryPolicy",
+                "ecr:SetRepositoryPolicy",
+                "ecr:LambdaECRImageRetrievalPolicy",
+                "elasticloadbalancing:RegisterTargets",
+                "elasticloadbalancing:DeregisterTargets",
+                "elasticloadbalancing:DescribeTargetHealth"
             ],
             "Resource": "*"
         },
@@ -62,8 +85,8 @@ Create a new IAM user for github actions and get the access keys.
 }
 ```
 
-4. Copy the Access key id and the secret access key.
-5. Create a new file called ".env" and paste the two keys.
+5. Copy the Access key id and the secret access key.
+6. Create a new file called ".env" and paste the two keys.
 
 ```
 AWS_ACCESS_KEY_ID={{}}
