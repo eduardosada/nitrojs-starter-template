@@ -33,6 +33,52 @@ Parameters:
     Type: AWS::Route53::HostedZone::Id
 
 Resources:
+  IAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: /
+      # PolicyName: !Sub ${EnvironmentName}-${AWS::StackName}-ImageBuilderForGitHub
+      # Groups:
+      #   - String
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "cloudformation:DescribeStacks"
+            Resource: !Ref AWS::StackId
+
+          - Effect: Allow
+            Action:
+              - "elasticloadbalancing:RegisterTargets"
+              - "elasticloadbalancing:DeregisterTargets"
+              - "elasticloadbalancing:DescribeTargetHealth"
+            Resource: !Ref TargetGroup
+
+          - Effect: Allow
+            Action:
+              - "ecr:DescribeRepositories"
+              - "ecr:GetRepositoryPolicy"
+              - "ecr:SetRepositoryPolicy"
+              - "ecr:LambdaECRImageRetrievalPolicy"
+              - "ecr:PutImage"
+              - "ecr:UploadLayerPart"
+              - "ecr:InitiateLayerUpload"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:CompleteLayerUpload"
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:GetAuthorizationToken"
+              - "ecr:BatchGetImage"
+            Resource: !GetAtt [Repository, Arn]
+
+          - Effect: Allow
+            Action:
+              - "lambda:CreateFunction"
+              - "lambda:DeleteFunction"
+              - "lambda:AddPermission"
+              - "lambda:GetFunction"
+            Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
+
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -308,6 +354,12 @@ Resources:
           Value: !Ref AWS::StackId
 
 Outputs:
+  IAMPolicy:
+    Description: |
+      IAM policy to allow access to push images to the ECR Repository
+      and create lambda functions.
+    Value: !Ref IAMPolicy
+
   RepositoryUri:
     Description: The ECR repository URI
     Value: !GetAtt [Repository, RepositoryUri]

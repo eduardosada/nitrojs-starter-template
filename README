@@ -18,7 +18,6 @@ Create a new IAM user for github actions and get the access keys.
             "Effect": "Allow",
             "Action": [
                 "cloudformation:DescribeStacks",
-                "ecr:CreateRepository",
                 "ecr:DescribeRepositories"
             ],
             "Resource": "*"
