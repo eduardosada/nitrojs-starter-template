@@ -1,92 +1,15 @@
 # Nitro.js Starter Template
 
-## Clone and install
+## Deploy infrastructure
 
-Clone this repository and run `npm i` to install dependencies.
-
-Create a new IAM user for github actions and get the access keys.
-1. Go to IAM a create a new user called "github-actions"
-2. Enable "Access key - Programmatic access"
-3. On Permissions select "Attach existing policies directly"
-4. Create a new Policy called "ImageBuilderForGitHub"
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "cloudformation:DescribeStacks",
-                "ecr:DescribeRepositories"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "AllowPushPull",
-            "Effect": "Allow",
-            "Action": [
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchGetImage",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:CompleteLayerUpload",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:InitiateLayerUpload",
-                "ecr:PutImage",
-                "ecr:UploadLayerPart",
-                "ecs:RegisterTaskDefinition"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ecs:RegisterTaskDefinition"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "lambda:CreateFunction",
-                "lambda:DeleteFunction",
-                "lambda:AddPermission",
-                "lambda:GetFunction",
-                "ecr:GetRepositoryPolicy",
-                "ecr:SetRepositoryPolicy",
-                "ecr:LambdaECRImageRetrievalPolicy",
-                "elasticloadbalancing:RegisterTargets",
-                "elasticloadbalancing:DeregisterTargets",
-                "elasticloadbalancing:DescribeTargetHealth"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": "kms:Decrypt",
-            "Resource": "*",
-            "Condition": {
-                "ForAnyValue:StringEquals": {
-                    "aws:CalledVia": "imagebuilder.amazonaws.com",
-                    "kms:EncryptionContextKeys": "aws:imagebuilder:arn"
-                }
-            }
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogStream",
-                "logs:CreateLogGroup",
-                "logs:PutLogEvents"
-            ],
-            "Resource": "arn:aws:logs:*:*:log-group:/aws/imagebuilder/*"
-        }
-    ]
-}
-```
-
-5. Copy the Access key id and the secret access key.
-6. Create a new file called ".env" and paste the two keys.
+1. Go to AWS Cloudformation, upload the /infrastructure/stack.yml and deploy.
+2. The stack will output a IAMPolicy. Get that name.
+3. Go to IAM and create a new user called "github-actions"
+4. Enable "Access key - Programmatic access"
+5. On Permissions select "Attach existing policies directly"
+6. Attach the policy that was created on the stack.
+7. Copy the Access key id and the secret access key.
+8. Create a new file called ".env" and paste these two keys.
 
 ```
 AWS_ACCESS_KEY_ID={{}}
@@ -98,3 +21,7 @@ Before commiting any changes in this repository configure github actions:
 1. Go to Repository Settings / Secrets / Actions and click on "New repository secret".
 2. Add a new secret called "AWS_ACCESS_KEY_ID" with your AWS access key id.
 3. Add a new secret called "AWS_SECRET_ACCESS_KEY" with your AWS secret access key.
+
+## Clone and install
+
+Clone this repository and run `npm i` to install dependencies.

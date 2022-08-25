@@ -67,9 +67,18 @@ Resources:
               - "ecr:GetDownloadUrlForLayer"
               - "ecr:CompleteLayerUpload"
               - "ecr:BatchCheckLayerAvailability"
-              - "ecr:GetAuthorizationToken"
               - "ecr:BatchGetImage"
             Resource: !GetAtt [Repository, Arn]
+
+          - Effect: Allow
+            Action:
+              - "ecr:GetAuthorizationToken"
+            Resource: "*"
+
+          - Effect: Allow
+            Action:
+              - "iam:PassRole"
+            Resource: !GetAtt [LambdaExecutionRole, Arn]
 
           - Effect: Allow
             Action:
