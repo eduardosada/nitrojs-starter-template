@@ -106,17 +106,19 @@ jobs:
         env:
           TARGET_GROUP_ARN: ${{ steps.get-arns.outputs.TargetGroupArn }}
         run: |
-          PREV_LAMBDA_ID=$(
+          OLD_LAMBDA_ARN=$(
             aws elbv2 describe-target-health \
             --target-group-arn $TARGET_GROUP_ARN \
             --query 'TargetHealthDescriptions[0].Target.Id' \
             --output text
           )
 
-          if [ "$PREV_LAMBDA_ID" != "None" ]; then
+          echo "OLD_LAMBDA_ARN=$OLD_LAMBDA_ARN" >> $GITHUB_ENV
+
+          if [ "$OLD_LAMBDA_ARN" != "None" ]; then
             aws elbv2 deregister-targets \
               --target-group-arn $TARGET_GROUP_ARN \
-              --targets Id=$PREV_LAMBDA_ID
+              --targets Id=$OLD_LAMBDA_ARN
           fi
 
       - name: Register the new Lambda function with the Target Group
@@ -127,3 +129,9 @@ jobs:
           aws elbv2 register-targets \
             --target-group-arn $TARGET_GROUP_ARN \
             --targets Id=$LAMBDA_ARN
+
+      - name: Delete old Lambda function
+        id: delete-old-lambda-function
+        if: ${{ env.OLD_LAMBDA_ARN != 'None' }}
+        run: |
+          aws lambda delete-function --function-name $OLD_LAMBDA_ARN

@@ -50,6 +50,7 @@ Create a new IAM user for github actions and get the access keys.
             "Effect": "Allow",
             "Action": [
                 "lambda:CreateFunction",
+                "lambda:DeleteFunction",
                 "lambda:AddPermission",
                 "lambda:GetFunction",
                 "ecr:GetRepositoryPolicy",

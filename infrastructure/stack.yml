@@ -162,13 +162,34 @@ Resources:
       RepositoryPolicyText:
         Version: "2012-10-17"
         Statement:
-          - Sid: AllowPushPull
+          - Sid: AllowPullFromLambda
             Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action:
               - "ecr:GetDownloadUrlForLayer"
               - "ecr:BatchGetImage"
+            Condition:
+              ArnLike:
+                "aws:SourceArn": !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*"
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Delete old images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
       Tags:
         - Key: Environment
           Value: !Ref EnvironmentName
@@ -196,7 +217,12 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckEnabled: false
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 300
+      HealthCheckPath: /health
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       TargetType: lambda
       Tags:
         - Key: Environment
