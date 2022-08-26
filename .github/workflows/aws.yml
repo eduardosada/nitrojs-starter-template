@@ -67,8 +67,6 @@ jobs:
 
           echo "1.-----"
           echo $SSM_OUTPUT
-          echo "2.-----"
-          node -pe "process.argv[1]" "$SSM_OUTPUT"
           echo "3.-----"
 
           ENVIRONMENT_VARIABLES_STR=$(
