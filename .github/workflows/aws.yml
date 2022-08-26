@@ -80,7 +80,7 @@ jobs:
               --no-paginate \
               --query "Parameters[*].{Name:Name,Value:Value}" \
               --with-decryption \
-              --output text \
+              --output json \
           )
 
           ENVIRONMENT_VARIABLES_STR=$(
