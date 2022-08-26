@@ -88,9 +88,9 @@ jobs:
           ENVIRONMENT_VARIABLES=()
           while IFS= read -r line
           do
-            read -r path value <<< $line
-            key="${path##*/}"
-            ENVIRONMENT_VARIABLES+=($key=$value)
+            read -r PARAM_PATH PARAM_VALUE <<< $line
+            PARAM_KEY="${PARAM_PATH##*/}"
+            ENVIRONMENT_VARIABLES+=($PARAM_KEY=$PARAM_VALUE)
           done <<< "$SSM_OUTPUT"
 
           echo "ENVARS:: $ENVIRONMENT_VARIABLES"
