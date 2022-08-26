@@ -83,20 +83,14 @@ jobs:
               --output text \
           )
 
-          echo "OUTPUT:: $SSM_OUTPUT"
+          ENVIRONMENT_VARIABLES_STR=$(
+            node -pe '
+              JSON.parse(process.argv[1])
+              .map(({Name, Value}) => `${Name.split(`/`)[3]}=${Value}`)
+              .join(`,`)' \
+              $SSM_OUTPUT
+          )
 
-          ENVIRONMENT_VARIABLES=()
-          while IFS= read -r line
-          do
-            read -r PARAM_PATH PARAM_VALUE <<< $line
-            PARAM_KEY="${PARAM_PATH##*/}"
-            ENVIRONMENT_VARIABLES+=($PARAM_KEY=$PARAM_VALUE)
-          done <<< "$SSM_OUTPUT"
-
-          echo "ENVARS:: $ENVIRONMENT_VARIABLES"
-
-          printf -v ENVIRONMENT_VARIABLES_STR '%s,' "${data[@]}"
-          ENVIRONMENT_VARIABLES_STR="${ENVIRONMENT_VARIABLES_STR%,}"
           echo "::set-output name=ENVIRONMENT_VARIABLES_STR::$ENVIRONMENT_VARIABLES_STR"
           echo "LISTO:: $ENVIRONMENT_VARIABLES_STR"
 
