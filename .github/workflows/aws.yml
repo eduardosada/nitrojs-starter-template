@@ -51,24 +51,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REPOSITORY: ${{ steps.get-arns.outputs.RepositoryName }}
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          IMAGE_TAG=${{ github.sha }}
-          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-          # Build a docker container and push it to ECR
-          docker build . --file image-lambda.Dockerfile --tag $IMAGE_URI
-          docker push $IMAGE_URI
-
-          # Output the new image URI
-          echo "::set-output name=image::$IMAGE_URI"
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-
       - name: Get environment variables for image
         id: get-env-vars
         env:
@@ -86,20 +68,37 @@ jobs:
           echo "1.-----"
           echo $SSM_OUTPUT
           echo "2.-----"
-          node -pe "process.argv[1]" $SSM_OUTPUT
+          node -pe "process.argv[1]" "$SSM_OUTPUT"
           echo "3.-----"
 
           ENVIRONMENT_VARIABLES_STR=$(
-            node -pe "JSON.parse(process.argv[1])
-              .map(({Name, Value}) => `${Name.split('/')[3]}=${Value}`)
-              .join(',')" $SSM_OUTPUT
-
+            node -pe 'JSON.parse(process.argv[1])
+              .map(({Name, Value}) => `${Name.split(\'/\')[3]}=${Value}`)
+              .join(\',\')' "$SSM_OUTPUT"
           )
           echo "4.-----"
           echo "LISTO:: $ENVIRONMENT_VARIABLES_STR"
           echo "5.-----"
 
           echo "::set-output name=ENVIRONMENT_VARIABLES_STR::$ENVIRONMENT_VARIABLES_STR"
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REPOSITORY: ${{ steps.get-arns.outputs.RepositoryName }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+          # Build a docker container and push it to ECR
+          docker build . --file image-lambda.Dockerfile --tag $IMAGE_URI
+          docker push $IMAGE_URI
+
+          # Output the new image URI
+          echo "::set-output name=image::$IMAGE_URI"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
       - name: Create and deploy a Lambda function
         id: lambda-function
