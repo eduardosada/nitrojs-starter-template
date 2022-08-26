@@ -72,7 +72,6 @@ jobs:
       - name: Get environment variables for image
         id: get-env-vars
         env:
-          AWS_STACK_NAME
           ENVIRONMENT_NAME: ${{ steps.get-arns.outputs.EnvironmentName }}
         run: |
           SSM_OUTPUT=$(
