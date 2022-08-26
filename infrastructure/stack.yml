@@ -37,9 +37,6 @@ Resources:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Path: /
-      # PolicyName: !Sub ${EnvironmentName}-${AWS::StackName}-ImageBuilderForGitHub
-      # Groups:
-      #   - String
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -90,6 +87,17 @@ Resources:
               - "lambda:AddPermission"
               - "lambda:GetFunction"
             Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*
+
+          - Effect: Allow
+            Action:
+              - "ssm:GetParametersByPath"
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/${EnvironmentName}
+
+          - Effect: Allow
+            Action:
+              - "ssm:GetParameter"
+              - "ssm:GetParameters"
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/${EnvironmentName}/*
 
   VPC:
     Type: AWS::EC2::VPC
@@ -366,6 +374,12 @@ Resources:
           Value: !Ref AWS::StackId
 
 Outputs:
+  EnvironmentName:
+    Description: The name of the environment
+    Value: !Ref EnvironmentName
+    Export:
+      Name: !Sub "${AWS::StackName}-EnvironmentName"
+
   IAMPolicy:
     Description: |
       IAM policy to allow access to push images to the ECR Repository

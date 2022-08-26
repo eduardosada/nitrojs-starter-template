@@ -69,13 +69,36 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
+      - name: Get environment variables for image
+        id: get-env-vars
+        env:
+          ENVIRONMENT_NAME: ${{ steps.get-arns.outputs.EnvironmentName }}
+        run: |
+          SSM_OUTPUT=$(
+            aws ssm get-parameters-by-path \
+              --path /${{ env.AWS_STACK_NAME }}/$ENVIRONMENT_NAME \
+              --no-paginate \
+              --query "Parameters[*].{Name:Name,Value:Value}" \
+              --with-decryption \
+              --output text \
+          )
+
+          ENVIRONMENT_VARIABLES=()
+          while IFS= read -r line; do
+            read -r path value <<< $line
+            key="${path##*/}"
+            ENVIRONMENT_VARIABLES+=($key=$value)
+          done <<< "$SSM_OUTPUT"
+
+          printf -v ENVIRONMENT_VARIABLES_STR '%s,' "${data[@]}"
+          ENVIRONMENT_VARIABLES_STR="${ENVIRONMENT_VARIABLES_STR%,}"
+          echo "::set-output name=ENVIRONMENT_VARIABLES_STR::$ENVIRONMENT_VARIABLES_STR"
+
       - name: Create and deploy a Lambda function
         id: lambda-function
         env:
           LAMBDA_EXECUTION_ROLE: ${{ steps.get-arns.outputs.LambdaExecutionRoleArn }}
-          ENV_DOMAIN_NAME: nitrotemplate
-          ENV_SUPABASE_KEY: example
-          ENV_SUPABASE_URL: example
+          ENVIRONMENT_VARIABLES: ${{ steps.get-env-vars.outputs.ENVIRONMENT_VARIABLES_STR }}
 
         run: |
           LAMBDA_ARN=$(
@@ -84,7 +107,7 @@ jobs:
               --code ImageUri=$IMAGE_URI \
               --role $LAMBDA_EXECUTION_ROLE \
               --package-type Image \
-              --environment Variables="{DOMAIN_NAME=$ENV_DOMAIN_NAME,SUPABASE_KEY=$ENV_SUPABASE_KEY,SUPABASE_URL=$ENV_SUPABASE_URL}" \
+              --environment Variables="{$ENVIRONMENT_VARIABLES}" \
               --output text \
               --query 'FunctionArn' \
               --publish
