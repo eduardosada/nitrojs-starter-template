@@ -72,16 +72,19 @@ jobs:
       - name: Get environment variables for image
         id: get-env-vars
         env:
+          AWS_STACK_NAME
           ENVIRONMENT_NAME: ${{ steps.get-arns.outputs.EnvironmentName }}
         run: |
           SSM_OUTPUT=$(
             aws ssm get-parameters-by-path \
-              --path /${{ env.AWS_STACK_NAME }}/$ENVIRONMENT_NAME \
+              --path /${{ env.AWS_STACK_NAME }}/${{ env.ENVIRONMENT_NAME }} \
               --no-paginate \
               --query "Parameters[*].{Name:Name,Value:Value}" \
               --with-decryption \
               --output json \
           )
+
+          echo $SSM_OUTPUT
 
           ENVIRONMENT_VARIABLES_STR=$(
             node -pe '
