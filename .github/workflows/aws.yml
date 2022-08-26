@@ -51,34 +51,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Get environment variables for image
-        id: get-env-vars
-        env:
-          ENVIRONMENT_NAME: ${{ steps.get-arns.outputs.EnvironmentName }}
-        run: |
-          SSM_OUTPUT=$(
-            aws ssm get-parameters-by-path \
-              --path /${{ env.AWS_STACK_NAME }}/${{ env.ENVIRONMENT_NAME }} \
-              --no-paginate \
-              --query "Parameters[*].{Name:Name,Value:Value}" \
-              --with-decryption \
-              --output json \
-          )
-
-          echo "1.-----"
-          echo "$SSM_OUTPUT"
-          echo "3.-----"
-          ENVIRONMENT_VARIABLES_STR=$(
-            node -pe 'JSON.parse(process.argv[1])
-                .map(({Name, Value}) => `${Name.split(`/`)[3]}=${Value}`)
-                .join(`,`)' "$SSM_OUTPUT"
-          )
-          echo "4.-----"
-          echo "LISTO:: $ENVIRONMENT_VARIABLES_STR"
-          echo "5.-----"
-
-          echo "::set-output name=ENVIRONMENT_VARIABLES_STR::$ENVIRONMENT_VARIABLES_STR"
-
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -96,6 +68,28 @@ jobs:
           echo "::set-output name=image::$IMAGE_URI"
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+      - name: Get environment variables for image
+        id: get-env-vars
+        env:
+          ENVIRONMENT_NAME: ${{ steps.get-arns.outputs.EnvironmentName }}
+        run: |
+          SSM_OUTPUT=$(
+            aws ssm get-parameters-by-path \
+              --path /${{ env.AWS_STACK_NAME }}/${{ env.ENVIRONMENT_NAME }} \
+              --no-paginate \
+              --query "Parameters[*].{Name:Name,Value:Value}" \
+              --with-decryption \
+              --output json \
+          )
+
+          ENVIRONMENT_VARIABLES_STR=$(
+            node -pe 'JSON.parse(process.argv[1])
+                .map(({Name, Value}) => `${Name.split(`/`)[3]}=${Value}`)
+                .join(`,`)' "$SSM_OUTPUT"
+          )
+
+          echo "::set-output name=ENVIRONMENT_VARIABLES_STR::$ENVIRONMENT_VARIABLES_STR"
 
       - name: Create and deploy a Lambda function
         id: lambda-function
