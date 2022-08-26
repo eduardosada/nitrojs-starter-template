@@ -83,12 +83,16 @@ jobs:
               --output text \
           )
 
+          echo $SSM_OUTPUT
+
           ENVIRONMENT_VARIABLES=()
           while IFS= read -r line; do
             read -r path value <<< $line
             key="${path##*/}"
             ENVIRONMENT_VARIABLES+=($key=$value)
           done <<< "$SSM_OUTPUT"
+
+          echo $ENVIRONMENT_VARIABLES
 
           printf -v ENVIRONMENT_VARIABLES_STR '%s,' "${data[@]}"
           ENVIRONMENT_VARIABLES_STR="${ENVIRONMENT_VARIABLES_STR%,}"
