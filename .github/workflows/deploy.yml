@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  deploy_code:
+  deploy:
     name: Deploy Code
     runs-on: ubuntu-latest
     environment: production
