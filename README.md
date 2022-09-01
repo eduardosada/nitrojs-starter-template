@@ -1,5 +1,7 @@
 # Nitro.js Starter Template
 
+Nitro.js starter template with jest, ci/cd on aws, and lambda functions.
+
 ## Deploy infrastructure
 
 1. Go to AWS Cloudformation, upload the /infrastructure/stack.yml and deploy.
@@ -30,3 +32,8 @@ Before commiting any changes in this repository configure github actions:
 ## Clone and install
 
 Clone this repository and run `npm i` to install dependencies.
+
+
+## Project Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/d0fa04d66cca5f2d9c166ba3bb395283a217dbfd.svg "Repobeats analytics image")
